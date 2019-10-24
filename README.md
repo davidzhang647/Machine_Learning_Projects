@@ -13,7 +13,8 @@ Models/Methods Used: Random Forest, Boosting, Bagging, Linear Regression, Stepwi
 
 Database: https://www.kaggle.com/c/home-credit-default-risk/data
 
-### Other Projects
+
+### Other Projects:
 
 #### Let's YELP to Open Restaurants
 Date: August 2019
