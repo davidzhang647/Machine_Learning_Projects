@@ -23,6 +23,8 @@ Programming Language: SQL & Python
 
 Type: Exploratory Data Analysis
 
+Platform: Google Cloud Platform
+
 Methods Used: Joining Tables, Subquery, Data Visualization in Python & Tableau
 
 Database: https://www.kaggle.com/yelp-dataset/yelp-dataset/version/6
