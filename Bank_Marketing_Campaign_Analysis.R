@@ -1,4 +1,4 @@
-######## load libraries
+######## load packages
 library(tidyverse)
 library(corrplot)
 library(fastDummies)
@@ -20,14 +20,13 @@ library(inspectdf)
 library(cowplot)
 
 ######### load the data set
-bank <- read.csv("project/bank.csv")
-
+bank <- read.csv("data/bank.csv")
 
 ##########################################
 ## Exploratory Data Analysis
 ##########################################
 
-## Overview of categorical variables
+## Categorical variables overview
 x <- inspect_cat(bank, show_plot = T)
 show_plot(x, text_labels = T)
 
@@ -124,26 +123,20 @@ bank %>%
 ##########################################
 
 ## remove unnecessary columns - month and day
+## they are overlapped variables 
 bank2 <- bank %>%
   filter(!(pdays != -1 & poutcome=='unknown')) %>%
   filter(!(job == "unknown")) %>% 
   select(-month, -day, -poutcome)
 
-
-dim(bank2)  ## 11090 x 15
-skimr::skim(bank2)
-View(bank2)
-
-
+## convert categorical variables to dummies
+## and drop the following unknown dummy variables
 bank_clean <- fastDummies::dummy_cols(bank2, remove_first_dummy = T) %>% 
   select(-contact, -default, -deposit,
          -education, -housing, -job,
          -loan, -marital, -job_unknown)
 
 colnames(bank_clean) <- sub("-","_", colnames(bank_clean))
-
-bank_clean$train <- NULL
-saveRDS(bank_clean, "project/bank_clean.RDS")
 
 ## Split into training/test dataset
 set.seed(820)
@@ -159,13 +152,27 @@ bank_train$train <- NULL
 bank_test <- bank_clean %>% filter(train == 0)
 bank_test$train <- NULL
 
+## for future models 
+bank_clean$train <- NULL
+x_train <- model.matrix(deposit_yes ~ ., bank_train)[, -1]
+y_train <- bank_train$deposit_yes
+x_test <- model.matrix(deposit_yes ~ ., bank_test)[ ,-1] 
+y_test <- bank_test$deposit_yes
+
 ########################################################
 ## Logistic regression
 ########################################################
-logit <- glm(deposit_yes~., data=bank_train, family="binomial")
 
+## build logistic model
+logit <- glm(deposit_yes~., data=bank_train, family="binomial")
 yhat_logit <- predict(logit, bank_test,type='response')
 
+## review model summary and important variables
+summary(logit)
+sort(logit$coefficients)
+sort(desc(logit$coefficients))
+
+## Model performance measurement 
 modelroc_logit <- roc(as.ordered(y_test), yhat_logit)
 modelroc_logit
 
@@ -177,17 +184,12 @@ plot(modelroc_logit, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),
 ########################################################
 ## Lasso
 ########################################################
-
-x_train <- model.matrix(deposit_yes ~ ., bank_train)[, -1]
-y_train <- bank_train$deposit_yes
-x_test <- model.matrix(deposit_yes ~ ., bank_test)[ ,-1] 
-y_test <- bank_test$deposit_yes
-
+## build Lasso model
 fit_lasso <- cv.glmnet(x_train, y_train, alpha = 1,
                        nfolds = 10, family="binomial")
-
 yhat_lasso_test <- predict(fit_lasso, x_test, s = fit_lasso$lambda.min)
 
+## Model performance measurement 
 modelroc_lasso <- roc(as.ordered(y_test), yhat_lasso_test)
 modelroc_lasso
 
@@ -196,19 +198,22 @@ plot(modelroc_lasso, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),
      grid.col=c("green", "red"), max.auc.polygon=TRUE,
      auc.polygon.col="skyblue", print.thres=TRUE)
 
-
-# Coef
+# view variables coefficients
 coef(fit_lasso)
 
 ########################################################
 ## Random Forest
 ########################################################
-rf <- randomForest(deposit_yes ~ ., data = bank_train, ntree = 500)
 
+## build Random Forest model
+## number of trees = 500
+rf <- randomForest(deposit_yes ~ ., data = bank_train, ntree = 500)
 yhat_rf_test <- predict(rf, bank_test[, -27], type='response')
 
+## view variables importance
 varImpPlot(rf)
 
+## Model performance measurement
 modelroc_rf <- roc(as.ordered(y_test), as.ordered(yhat_rf_test))
 modelroc_rf
 
@@ -223,18 +228,19 @@ plot(modelroc_rf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),
 
 train_bst <- bank_train %>%  dplyr::select(-deposit_yes)
 test_bst <- bank_test %>%  dplyr::select(-deposit_yes)
-
 test_m <- as.matrix(test_bst)
 train_m <- as.matrix(train_bst)
 deposit_train <- bank_train$deposit_yes
 deposit_test <- bank_test$deposit_yes
 
+## build Boosting model
 # here we choose 0.01 instead of 0.001
 # to avoid overfitting controlling 1000 rounds. 
 bst <- xgboost(data = train_m, label = deposit_train, eta =0.01,
                max_depth = 6, nrounds = 800, objective = "binary:logistic")
 pred <- predict(bst,test_m, type='response')
 
+## Model performance measurement
 modelroc_boost <- roc(as.ordered(y_test), pred)
 modelroc_boost
 
@@ -243,14 +249,17 @@ plot(modelroc_boost, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),
      grid.col=c("green", "red"), max.auc.polygon=TRUE,
      auc.polygon.col="skyblue", print.thres=TRUE)
 
+## model summary
 summary(bst)
 ########################################################
 ## Support Vector Machines
 ########################################################
-svm_model <- svm(deposit_yes ~ ., data = bank_train, kernel="linear", scale = T)
 
+## build SVM model
+svm_model <- svm(deposit_yes ~ ., data = bank_train, kernel="linear", scale = T)
 yhat_svm_test <- predict(svm_model, bank_test[, -27])
 
+## Model performance measurement
 modelroc_svm <- roc(as.ordered(y_test), yhat_svm_test)
 modelroc_svm
 
@@ -263,13 +272,15 @@ plot(modelroc_svm, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),
 ########################################################
 ## Naive Bayes
 ########################################################
+
 bank_train_nb <- bank_train
 bank_train_nb$deposit_yes <- as.factor(bank_train_nb$deposit_yes)
 
+## build Naive Bayes model
 nb <- naive_bayes(deposit_yes ~ ., data = bank_train_nb)
-
 yhat_nb_test <- predict(nb, bank_test[, -27], type = "prob")
 
+## Model performance measurement
 modelroc_nb <- roc(as.ordered(y_test), yhat_nb_test[, 2])
 modelroc_nb
 
@@ -302,6 +313,17 @@ ggplot(auc_table, aes(x = Model, y = AUC)) +
   scale_fill_manual(values = c("#0072B2", "#999999","dark grey", "#D55E00","#56B4E9", "purple")) +
   theme_minimal()
 
+
+########################################################
+## Apply best model
+########################################################
+
+## so far, our best model is Boosting (AUC:0.892)
+## here we apply the threshold = 0.447
+bank_test$deposit_predict <- ifelse(pred > 0.447, 1, 0)
+
+## Confusion Matrix
+confusionMatrix(table(bank_test$deposit_yes, bank_test$deposit_predict))
 
 ########################################################
 ## Clustering
