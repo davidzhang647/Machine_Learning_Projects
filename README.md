@@ -2,6 +2,26 @@
 
 ### Machine Learning Projects:
 
+#### K-Means Cluster Analysis for stock market industries (Class Exercise)
+Date: March 2020
+  
+Programming Language: Python
+
+Type: Unsupervised Machine Learning - clustering
+
+Models/Methods Used: Kmeans
+
+#### Bank Marketing Campaign Analysis
+Date: December 2019
+  
+Programming Language: R
+
+Type: Supervised Machine Learning - classification, Unsupervised Machine Learning - clustering
+
+Models/Methods Used: XGBoost, Random Forest, Logistic
+
+
+
 #### Default Risk Prediction for Home Credit Group   
 Date: October 2019
   
