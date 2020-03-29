@@ -1,8 +1,8 @@
 # Data_Analytics_Projects
 
-### Machine Learning Projects:
+## Machine Learning Projects:
 
-#### K-Means Cluster Analysis for stock market industries (Class Exercise)
+### K-Means Cluster Analysis for stock market industries (Class Exercise)
 Date: March 2020
   
 Programming Language: Python
@@ -11,7 +11,7 @@ Type: Unsupervised Machine Learning - clustering
 
 Models/Methods Used: Kmeans
 
-#### Bank Marketing Campaign Analysis
+### Bank Marketing Campaign Analysis
 Date: December 2019
   
 Programming Language: R
@@ -22,7 +22,7 @@ Models/Methods Used: XGBoost, Random Forest, Logistic
 
 
 
-#### Default Risk Prediction for Home Credit Group   
+### Default Risk Prediction for Home Credit Group   
 Date: October 2019
   
 Programming Language: R
@@ -34,9 +34,9 @@ Models/Methods Used: Random Forest, Boosting, Bagging, Linear Regression, Stepwi
 Database: https://www.kaggle.com/c/home-credit-default-risk/data
 
 
-### Other Projects:
+## Other Projects:
 
-#### Let's YELP to Open Restaurants
+### Let's YELP to Open Restaurants
 Date: August 2019
 
 Programming Language: SQL & Python
